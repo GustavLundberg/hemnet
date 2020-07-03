@@ -28,14 +28,30 @@ url = 'https://www.hemnet.se/bostad/lagenhet-2rum-rorsjostaden-malmo-kommun-fore
 page = requests.get(url)
 results = BeautifulSoup(page.content, 'html.parser')
 
-address_div = results.find_all('div', class_ = 'property-address')
-price_div = results.find_all('p', class_ = 'property-info__price qa-property-price')
-info_div = results.find_all('div', class_ = 'property-info__attributes-and-description')
+address_div = results.find('div', class_ = 'property-address')
+price_p = results.find('p', class_ = 'property-info__price qa-property-price')
+info_div = results.find('div', class_ = 'property-info__attributes-and-description')
 
-print('-----------------------------------------------------------------')
-print(type(address_div), '\n', address_div)
-print('-----------------------------------------------------------------')
-print(type(price_div), '\n', price_div)
-print('-----------------------------------------------------------------')
-print(type(info_div), '\n', info_div)
+
+# Extracting the address and area
+address = address_div.find('h1', class_ = 'qa-property-heading hcl-heading hcl-heading--size2 hcl-heading--reset-margin').text
+#print(type(address), address)
+
+area = address_div.find('span', class_ = 'property-address__area').text
+#print(type(area), area)
+
+
+# Extracing the price and converting to int
+price = price_p.text
+price = [x for x in price if x in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']]
+price = ''.join(price)
+price = int(price)
+#print(type(price), price)
+
+
+
+
+# Extracting the info attributes and description
+#print('-----------------------------------------------------------------')
+#print(type(info_div), '\n', info_div)
 
