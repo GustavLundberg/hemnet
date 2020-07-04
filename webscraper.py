@@ -17,8 +17,8 @@ links = []
 for housing_elem in housing_elems:
 	links.append(housing_elem['href'])
 
-for link in links:
-	print(type(link), link)
+#for link in links:
+#	print(type(link), link)
 
 ################################
 
@@ -52,6 +52,43 @@ price = int(price)
 
 
 # Extracting the info attributes and description
-#print('-----------------------------------------------------------------')
-#print(type(info_div), '\n', info_div)
+print('-----------------------------------------------------------------')
+print(type(info_div), '\n', info_div)
 
+property_type = info_div.find('dd', class_ = 'property-attributes-table__value').text
+tenure_type = info_div.find('dd', class_ = 'property-attributes-table__value').text
+
+#print(type(tenure_type), tenure_type)
+
+print('-----------------------------------------------------------------')
+
+#for div in info_div.find_all('div'):
+#	c = div['class']
+#	if 'property-attributes-table__row' in div['class'][0]:
+#		print(type(div), div)
+	#print('c = ', type(c), c)
+#	print('-----------------------------------------------------------------')
+	#print(type(div), div)
+	#div.find('dd', class_ = 'property-attributes-table__value').text
+
+dt = info_div.find_all('dt', class_ = 'property-attributes-table__label')
+dd = info_div.find_all('dd', class_ = 'property-attributes-table__value')
+
+dt = [x.text.strip() for x in dt]
+dd = [x.text.strip() for x in dd]
+
+dt = dt[:-1]
+dd = dd[:-1]
+
+attributes = {key: value for key, value in zip(dt, dd)}
+print(attributes) # Cleaning up later
+
+description = info_div.find('div', class_ = 'property-description js-property-description property-description--long').text.strip()
+print(type(description), description)
+
+popularity = info_div.find_all('div', class_ = 'property-visits-counter__row-value')
+popularity = [x.text for x in popularity]
+print(popularity)
+
+new_str = unicodedata.normalize("NFKD", popularity[0])
+print(new_str)
