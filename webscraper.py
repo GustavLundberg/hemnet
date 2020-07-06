@@ -47,16 +47,12 @@ def get_details(url):
 	area = address_div.find('span', class_ = 'property-address__area').text
 	details['area'] = area
 
-
 	# Extracing the price and converting to int
 	price = price_p.text
 	price = [x for x in price if x in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']]
 	price = ''.join(price)
 	price = int(price)
 	details['price'] = price
-
-
-
 
 	# Extracting the info attributes and description
 	property_type = info_div.find('dd', class_ = 'property-attributes-table__value').text
@@ -75,14 +71,10 @@ def get_details(url):
 	dd = dd[:-1]
 
 	attributes = {key: value for key, value in zip(dt, dd)}
-
 	details.update(attributes)
-	#print('AFTER - ', details)
 
 	popularity = info_div.find_all('div', class_ = 'property-visits-counter__row-value')
 	popularity = [x.text for x in popularity]
-
-	print('POP = ', popularity)
 	
 	try:
 		visits = popularity[0]
@@ -94,17 +86,8 @@ def get_details(url):
 	details['visits'] = visits
 	details['days_available'] = days_available	
 	
-
 	description = info_div.find('div', class_ = 'property-description js-property-description property-description--long').text.strip()
-	#print(type(description), description)
 	details['description'] = description
-
-	#popularity = [unicodedata.normalize("NFKD", el) for el in popularity]
-	#print(popularity)
-
-	#new_str = unicodedata.normalize("NFKD", popularity[0])
-	#new_str = int(new_str)
-	#print(type(new_str), new_str)
 
 	return details
 
@@ -114,5 +97,3 @@ for link in links:
 	print(get_details(link))
 	r = random.uniform(0, 5)
 	time.sleep(r)
-
-#details = get_details('https://www.hemnet.se/bostad/lagenhet-2rum-rorsjostaden-malmo-kommun-foreningsgatan-50a-16907356')
