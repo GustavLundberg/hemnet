@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import random
+import re
 
 url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=17989&item_types%5B%5D=bostadsratt'
 page = requests.get(url)
@@ -13,13 +14,6 @@ results = BeautifulSoup(page.content, 'html.parser')
 #housing_elems = results.find_all('li', class_ = 'normal-results__hit js-normal-list-item')
 #print(type(housing_elems), len(housing_elems), '\n', housing_elems[0])
 
-housing_elems = results.find_all('a', class_ = 'js-listing-card-link listing-card')
-
-links = []
-
-for housing_elem in housing_elems:
-	links.append(housing_elem['href'])
-
 # Get list of details page urls, given a search page url
 def get_urls_detail_pages(search_page_url):
 	
@@ -27,6 +21,7 @@ def get_urls_detail_pages(search_page_url):
 	lst_details_urls = []
 
 	for housing_elem in housing_elems:
+		print(housing_elem['href'])
 		lst_details_urls.append(housing_elem['href'])
 
 	return lst_details_urls
@@ -40,9 +35,19 @@ def get_urls_detail_pages(search_page_url):
 
 #url = 'https://www.hemnet.se/bostad/lagenhet-2rum-rorsjostaden-malmo-kommun-foreningsgatan-50a-16907356'
 
+# Converts a price string to an integer price
+def price_str_to_int(price_str):
+
+	price = [x for x in price_str if x in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']]
+	price = ''.join(price)
+	price = int(price)
+
+	return price
+
 def get_details(url):
 
 	details = {}
+	details['url'] = url
 
 	page = requests.get(url)
 	results = BeautifulSoup(page.content, 'html.parser')
@@ -61,9 +66,7 @@ def get_details(url):
 
 	# Extracing the price and converting to int
 	price = price_p.text
-	price = [x for x in price if x in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']]
-	price = ''.join(price)
-	price = int(price)
+	price = price_str_to_int(price)
 	details['price'] = price
 
 	# Extracting the info attributes and description
@@ -125,7 +128,7 @@ def get_details_multiple(lst_details_urls):
 	# Adding details for the rest of the properties
 	for i, details_url in enumerate(lst_details_urls[1:]):
 
-		if i > 3:
+		if i > 10:
 			break
 
 		print(details_url)
@@ -137,19 +140,46 @@ def get_details_multiple(lst_details_urls):
 	return df
 
 
-t0 = time.time()
-lst_details_urls = get_urls_detail_pages('https://www.hemnet.se/bostader?location_ids%5B%5D=17989&item_types%5B%5D=bostadsratt')
-df = get_details_multiple(lst_details_urls)
-t1 = time.time()
+if __name__ == '__main__':
 
-t_tot = t1-t0
-print('Time taken = ', t_tot)
-print(df.head())
+	url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=474088'
 
-path = '/py_scripts/df.pkl' # Path inside the docker container, to which a volume has been mounted
-df.to_pickle(path)
-df2 = pd.read_pickle(path)
-print(df2.head())
+	t0 = time.time()
+
+	# First page
+	lst_details_urls = get_urls_detail_pages(url)
+
+	# The rest of the pages
+	page = 2
+	found_urls = lst_details_urls
+	while found_urls:
+
+		url_w_page = url + f'&page={page}'
+		try:
+			found_urls = get_urls_detail_pages(url_w_page)
+			lst_details_urls.append(found_urls)
+		except:
+			print(f'{page-1} pages found')
+
+		page += 1
+
+
+	df = get_details_multiple(lst_details_urls)
+	t1 = time.time()
+
+	# Find position of column 'Pris/m^2' and rename the it
+	matches = [re.match('Pris', x) is not None for x in list(df.columns)]
+	index = matches.index(True)
+	df.rename(columns = {df.columns[index]: 'Kvadratmeterpris'}, inplace = True)
+
+	t_tot = t1-t0
+	print('Time taken = ', t_tot)
+	print(df.head())
+
+	path = '/py_scripts/df.pkl' # Path inside the docker container, to which a volume has been mounted
+	df.to_pickle(path)
+	df2 = pd.read_pickle(path)
+	print(df2.head())
 
 
 
