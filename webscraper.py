@@ -111,7 +111,7 @@ def get_details(url):
 	details['description'] = description
 
 	return details
-	
+
 
 # Get details of multiple properties found on a given a list of detail page urls
 def get_details_multiple(lst_details_urls, sleep_time = 2):
@@ -136,61 +136,112 @@ def get_details_multiple(lst_details_urls, sleep_time = 2):
 	return df
 
 
-if __name__ == '__main__':
+def sell_price(sell_page_url):
 
-	#url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=474088'
-	url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=17989'
-
-	# Finding the number of pages with results in the search page view
-	page = requests.get(url)
+	page = requests.get(sell_page_url)
 	results = BeautifulSoup(page.content, 'html.parser')
-	pagination_div = results.find('div', class_ = 'pagination')
 
-	try:
+	locations = results.find_all('div', class_ = 'sold-property-listing__location')
+	sizes = results.find_all('div', class_ = 'sold-property-listing__size')
+	prices = results.find_all('div', class_ = 'sold-property-listing__price')
 
-		pages = pagination_div.find_all('a', class_ = 'button')
-		pages = [page.text for page in pages]
-		if pages[-1] == 'Nästa':
-			pages = pages[:-1]
-		pages = [int(page) for page in pages]
-		pages = max(pages)
-		print('[INFO] Number of pages = ', pages)
+	location_lst = []
+	size_lst = []
+	price_lst = []
+	i = 0
 
-	except:
+	for location, size, price in zip(locations, sizes, prices):
 
-		pages = 1
-		print('[INFO] Only one page with results')
+		#print('location = \n', location)
+		#print('----------------------------------------')
+		#print('size = \n', size)
+		#print('----------------------------------------')
+		#print('price = \n', price)
+		#print('----------------------------------------')
 
-	lst_details_urls = []
-	t0 = time.time()
+		location_lst.append(location.find('span', class_ = 'item-result-meta-attribute-is-bold item-link').text)
+		size_lst.append(size.find('div', class_ = 'sold-property-listing__subheading sold-property-listing--left').text)
+		price_lst.append(price.find('span', class_ = 'sold-property-listing__subheading sold-property-listing--left').text)
 
-	for page in range(1, pages+1):
+	print(len(location_lst), location_lst)
+	print(len(size_lst), size_lst)
+	print(len(price_lst), price_lst)
 
-		if page > 1:
-			break
+	sell_dict = {'location': location_lst, 'size': size_lst, 'price': price_lst}
 
-		print(page)
-		url_w_page = f'{url}&page={page}'
-		print(url_w_page)
-		lst_details_urls.extend(get_urls_detail_pages(url_w_page))
-
-	#print(len(lst_details_urls))
-
-	df = get_details_multiple(lst_details_urls, sleep_time = 3)
-	t1 = time.time()
-
-	# Find position of column 'Pris/m^2' and rename the it
-	matches = [re.match('Pris', x) is not None for x in list(df.columns)]
-	index = matches.index(True)
-	df.rename(columns = {df.columns[index]: 'Kvadratmeterpris'}, inplace = True)
-
-	t_tot = t1-t0
-	print('Time taken = ', t_tot)
-	print(df.head())
-
-	path = '/py_scripts/df.pkl' # Path inside the docker container, to which a volume has been mounted
+	df = pd.DataFrame(sell_dict)
+	df['size'] = df['size'].apply(lambda x: unicodedata.normalize('NFKD', x))
 	print(df.info())
 	print(df.head())
-	df.to_pickle(path)
-	df2 = pd.read_pickle(path)
-	print(df2.head())
+
+	df['size'] = df['size'].apply(lambda x: x.split()[0])
+	df['price'] = df['price'].apply(price_str_to_int)
+
+	return df
+
+
+sell_page_url = 'https://www.hemnet.se/salda/bostader?location_ids%5B%5D=17989'
+res = sell_price(sell_page_url)
+
+
+#if __name__ == '__main__':
+
+	# #url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=474088'
+	# url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=17989'
+
+	# # Finding the number of pages with results in the search page view
+	# page = requests.get(url)
+	# results = BeautifulSoup(page.content, 'html.parser')
+	# pagination_div = results.find('div', class_ = 'pagination')
+
+	# try:
+
+	# 	pages = pagination_div.find_all('a', class_ = 'button')
+	# 	pages = [page.text for page in pages]
+	# 	if pages[-1] == 'Nästa':
+	# 		pages = pages[:-1]
+	# 	pages = [int(page) for page in pages]
+	# 	pages = max(pages)
+	# 	print('[INFO] Number of pages = ', pages)
+
+	# except:
+
+	# 	pages = 1
+	# 	print('[INFO] Only one page with results')
+
+	# lst_details_urls = []
+	# t0 = time.time()
+
+	# for page in range(1, pages+1):
+
+	# 	if page > 1:
+	# 		break
+
+	# 	print(page)
+	# 	url_w_page = f'{url}&page={page}'
+	# 	print(url_w_page)
+	# 	lst_details_urls.extend(get_urls_detail_pages(url_w_page))
+
+	# #print(len(lst_details_urls))
+
+	# df = get_details_multiple(lst_details_urls, sleep_time = 3)
+	# t1 = time.time()
+
+	# # Find position of column 'Pris/m^2' and rename the it
+	# matches = [re.match('Pris', x) is not None for x in list(df.columns)]
+	# index = matches.index(True)
+	# df.rename(columns = {df.columns[index]: 'Kvadratmeterpris'}, inplace = True)
+
+	# t_tot = t1-t0
+	# print('Time taken = ', t_tot)
+	# print(df.head())
+
+	# path = '/py_scripts/df.pkl' # Path inside the docker container, to which a volume has been mounted
+	# print(df.info())
+	# print(df.head())
+	# df.to_pickle(path)
+	# df2 = pd.read_pickle(path)
+	# print(df2.head())
+
+
+### Getting sell prices ###
