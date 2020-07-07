@@ -163,16 +163,16 @@ def sell_price(sell_page_url):
 		size_lst.append(size.find('div', class_ = 'sold-property-listing__subheading sold-property-listing--left').text)
 		price_lst.append(price.find('span', class_ = 'sold-property-listing__subheading sold-property-listing--left').text)
 
-	print(len(location_lst), location_lst)
-	print(len(size_lst), size_lst)
-	print(len(price_lst), price_lst)
+	#print(len(location_lst), location_lst)
+	#print(len(size_lst), size_lst)
+	#print(len(price_lst), price_lst)
 
 	sell_dict = {'location': location_lst, 'size': size_lst, 'price': price_lst}
 
 	df = pd.DataFrame(sell_dict)
 	df['size'] = df['size'].apply(lambda x: unicodedata.normalize('NFKD', x))
-	print(df.info())
-	print(df.head())
+	#print(df.info())
+	#print(df.head())
 
 	df['size'] = df['size'].apply(lambda x: x.split()[0])
 	df['price'] = df['price'].apply(price_str_to_int)
@@ -180,11 +180,7 @@ def sell_price(sell_page_url):
 	return df
 
 
-sell_page_url = 'https://www.hemnet.se/salda/bostader?location_ids%5B%5D=17989'
-res = sell_price(sell_page_url)
-
-
-#if __name__ == '__main__':
+if __name__ == '__main__':
 
 	# #url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=474088'
 	# url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=17989'
@@ -222,7 +218,6 @@ res = sell_price(sell_page_url)
 	# 	print(url_w_page)
 	# 	lst_details_urls.extend(get_urls_detail_pages(url_w_page))
 
-	# #print(len(lst_details_urls))
 
 	# df = get_details_multiple(lst_details_urls, sleep_time = 3)
 	# t1 = time.time()
@@ -236,12 +231,13 @@ res = sell_price(sell_page_url)
 	# print('Time taken = ', t_tot)
 	# print(df.head())
 
-	# path = '/py_scripts/df.pkl' # Path inside the docker container, to which a volume has been mounted
-	# print(df.info())
-	# print(df.head())
+	path = '/py_scripts/df.pkl' # Path inside the docker container, to which a volume has been mounted
 	# df.to_pickle(path)
-	# df2 = pd.read_pickle(path)
-	# print(df2.head())
 
-
-### Getting sell prices ###
+	
+	### Getting sell prices ###
+	sell_page_url = 'https://www.hemnet.se/salda/bostader?location_ids%5B%5D=17989'
+	df_sell = sell_price(sell_page_url)
+	print(df_sell)
+	path_sell = '/'.join(path.split('/')[:-1]) + '/' + 'df_sell.pkl' # Creates a path in the same directory as path with the name df_sell
+	df_sell.to_pickle(path_sell)
