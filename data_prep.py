@@ -14,11 +14,19 @@ df['Antal rum'] = df['Antal rum'].apply(lambda x: str.split(x)[0])
 df['Boarea'] = df['Boarea'].apply(lambda x: str.split(x)[0].replace(',', '.'))
 df['Balkong'] = df['Balkong'] == 'Ja'
 df['Förening'] = df['Förening'].apply(lambda x: re.sub('\n\nOm föreningen', '', x) if isinstance(x, str) else None)
-df['Avgift'] = df['Avgift'].apply(price_str_to_int)
+df['Avgift'] = df['Avgift'].apply(lambda x: price_str_to_int(x) if isinstance(x, str) else -1)
 df['Driftkostnad'] = df['Driftkostnad'].apply(lambda x: price_str_to_int(x) if isinstance(x, str) else -1)
 df['Kvadratmeterpris'] = df['Kvadratmeterpris'].apply(lambda x: price_str_to_int(x) if isinstance(x, str) else -1)
 df['visits'] = df['visits'].apply(lambda x: price_str_to_int(x) if isinstance(x, str) else -1)
 df['days_available'] = df['days_available'].apply(lambda x: price_str_to_int(x) if isinstance(x, str) else -1)
-df['Uteplats'] = df['Uteplats'] == 'Ja'
+
+try:
+	
+	f['Uteplats'] = df['Uteplats'] == 'Ja'
+
+except:
+
+	print('[INFO] The column Uteplats does not exist')
+
 
 print(df)

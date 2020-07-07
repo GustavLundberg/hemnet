@@ -7,9 +7,9 @@ import time
 import random
 import re
 
-url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=17989&item_types%5B%5D=bostadsratt'
-page = requests.get(url)
-results = BeautifulSoup(page.content, 'html.parser')
+#url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=17989&item_types%5B%5D=bostadsratt'
+#page = requests.get(url)
+#results = BeautifulSoup(page.content, 'html.parser')
 
 #housing_elems = results.find_all('li', class_ = 'normal-results__hit js-normal-list-item')
 #print(type(housing_elems), len(housing_elems), '\n', housing_elems[0])
@@ -17,11 +17,13 @@ results = BeautifulSoup(page.content, 'html.parser')
 # Get list of details page urls, given a search page url
 def get_urls_detail_pages(search_page_url):
 	
+	page = requests.get(search_page_url)
+	results = BeautifulSoup(page.content, 'html.parser')
 	housing_elems = results.find_all('a', class_ = 'js-listing-card-link listing-card')	
 	lst_details_urls = []
 
 	for housing_elem in housing_elems:
-		print(housing_elem['href'])
+		#print(housing_elem['href'])
 		lst_details_urls.append(housing_elem['href'])
 
 	return lst_details_urls
@@ -109,16 +111,10 @@ def get_details(url):
 	details['description'] = description
 
 	return details
-
-#for link in links:
-#	print('link = ', link)
-	#print(get_details('https://www.hemnet.se/bostad/lagenhet-2rum-mollevangen-malmo-kommun-simrishamnsgatan-7-b-16886300'))
-#	print(get_details(link))
-#	r = random.uniform(0, 5)
-#	time.sleep(r)
+	
 
 # Get details of multiple properties found on a given a list of detail page urls
-def get_details_multiple(lst_details_urls):
+def get_details_multiple(lst_details_urls, sleep_time = 2):
 
 	# Adding details for the first property
 	details = get_details(lst_details_urls[0])
@@ -128,43 +124,59 @@ def get_details_multiple(lst_details_urls):
 	# Adding details for the rest of the properties
 	for i, details_url in enumerate(lst_details_urls[1:]):
 
-		if i > 10:
-			break
+		#if i > 10:
+		#	break
 
-		print(details_url)
+		#print(details_url)
 
 		details = get_details(details_url)
 		df = df.append(details, ignore_index = True)
-		time.sleep(random.uniform(0, 1.5))
+		time.sleep(random.uniform(0, sleep_time))
 
 	return df
 
 
 if __name__ == '__main__':
 
-	url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=474088'
+	#url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=474088'
+	url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=17989'
 
+	# Finding the number of pages with results in the search page view
+	page = requests.get(url)
+	results = BeautifulSoup(page.content, 'html.parser')
+	pagination_div = results.find('div', class_ = 'pagination')
+
+	try:
+
+		pages = pagination_div.find_all('a', class_ = 'button')
+		pages = [page.text for page in pages]
+		if pages[-1] == 'Nästa':
+			pages = pages[:-1]
+		pages = [int(page) for page in pages]
+		pages = max(pages)
+		print('[INFO] Number of pages = ', pages)
+
+	except:
+
+		pages = 1
+		print('[INFO] Only one page with results')
+
+	lst_details_urls = []
 	t0 = time.time()
 
-	# First page
-	lst_details_urls = get_urls_detail_pages(url)
+	for page in range(1, pages+1):
 
-	# The rest of the pages
-	page = 2
-	found_urls = lst_details_urls
-	while found_urls:
+		if page > 1:
+			break
 
-		url_w_page = url + f'&page={page}'
-		try:
-			found_urls = get_urls_detail_pages(url_w_page)
-			lst_details_urls.append(found_urls)
-		except:
-			print(f'{page-1} pages found')
+		print(page)
+		url_w_page = f'{url}&page={page}'
+		print(url_w_page)
+		lst_details_urls.extend(get_urls_detail_pages(url_w_page))
 
-		page += 1
+	#print(len(lst_details_urls))
 
-
-	df = get_details_multiple(lst_details_urls)
+	df = get_details_multiple(lst_details_urls, sleep_time = 3)
 	t1 = time.time()
 
 	# Find position of column 'Pris/m^2' and rename the it
@@ -177,20 +189,8 @@ if __name__ == '__main__':
 	print(df.head())
 
 	path = '/py_scripts/df.pkl' # Path inside the docker container, to which a volume has been mounted
+	print(df.info())
+	print(df.head())
 	df.to_pickle(path)
 	df2 = pd.read_pickle(path)
 	print(df2.head())
-
-
-
-# details = get_details('https://www.hemnet.se/bostad/lagenhet-2rum-rorsjostaden-malmo-kommun-foreningsgatan-50a-16907356')
-# #print(details)
-# details_first = {key: [value] for key, value in details.items()}
-# #print(details)
-
-# df = pd.DataFrame.from_dict(details_first)
-# print(df.head())
-
-# df = df.append(details, ignore_index = True)
-# print('------------------------------------------------------')
-# print(df.head())
