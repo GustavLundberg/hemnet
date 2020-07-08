@@ -12,7 +12,7 @@ print('-------------------------------------------------------------------------
 df['area'] = df['area'].apply(lambda x: 'Ön' if re.match('(\s|^)(Ön|ön).*', x) else x)
 df['area'] = df['area'].apply(lambda x: re.sub('(,|/|\(|\-).*$', '', x).strip())
 df['Antal rum'] = df['Antal rum'].apply(lambda x: str.split(x)[0])
-df['Boarea'] = df['Boarea'].apply(lambda x: str.split(x)[0].replace(',', '.'))
+df['Boarea'] = df['Boarea'].apply(lambda x: float(str.split(x)[0].replace(',', '.')))
 df['Byggår'] = df['Byggår'].apply(lambda x: x if isinstance(x, str) else 2020)										# Assuming that property without Byggår is newly built
 df['Byggår'] = df['Byggår'].apply(lambda x: x.split('-')[-1] if isinstance(x, str) else x)							# Using the latest year as Byggår
 df['Balkong'] = df['Balkong'] == 'Ja'
@@ -33,3 +33,14 @@ except:
 
 print(df.info())
 print(df)
+
+
+# Applying transformations to df_sell
+df_sell = pd.read_pickle('/py_scripts/df_sell.pkl')
+#print(df_sell)
+df_sell['size'] = df_sell['size'].apply(lambda x: float(x.replace(',', '.')))
+#print(df_sell)
+
+
+df.to_pickle('/py_scripts/df.pkl')
+df_sell.to_pickle('/py_scripts/df_sell.pkl')
