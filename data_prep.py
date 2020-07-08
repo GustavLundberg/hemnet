@@ -2,7 +2,7 @@ import pandas as pd
 from webscraper import price_str_to_int
 import re
 
-df = pd.read_pickle('/py_scripts/df.pkl')
+df = pd.read_pickle('/py_scripts/dataframes/df_Wed-Jul--8-14:13:59-2020.pkl')
 print(df)
 print(df.info())
 #print(df.dtypes())
@@ -36,11 +36,11 @@ print(df)
 
 
 # Applying transformations to df_sold
-df_sold = pd.read_pickle('/py_scripts/df_sold.pkl')
+df_sold = pd.read_pickle('/py_scripts/dataframes/df_sold_Wed-Jul--8-14:13:59-2020.pkl')
 #print(df_sold)
 df_sold['size'] = df_sold['size'].apply(lambda x: float(x.replace(',', '.')))
-#print(df_sold)
+print(df_sold)
 
 
-df.to_pickle('/py_scripts/df.pkl')
-df_sold.to_pickle('/py_scripts/df_sold.pkl')
+df.to_pickle('/py_scripts/dataframes/df_Wed-Jul--8-14:13:59-2020.pkl')
+df_sold.to_pickle('/py_scripts/dataframes/df_sold_Wed-Jul--8-14:13:59-2020.pkl')

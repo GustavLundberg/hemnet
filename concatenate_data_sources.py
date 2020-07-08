@@ -1,9 +1,10 @@
 ### Use to concatenate the data from df.pkl and df_sold.pkl
 
 import pandas as pd
+import time
 
-path = '/py_scripts/df.pkl'
-path_sold = '/py_scripts/df_sold.pkl'
+path = '/py_scripts/dataframes/df_Wed-Jul--8-14:13:59-2020.pkl'
+path_sold = '/py_scripts/dataframes/df_sold_Wed-Jul--8-14:13:59-2020.pkl'
 
 df = pd.read_pickle(path)
 df_sold = pd.read_pickle(path_sold)
@@ -27,3 +28,7 @@ def concatenate_dfs(df, df_sold):
 
 res = concatenate_dfs(df, df_sold)
 #print(res)
+
+t = time.asctime()
+t = t.replace(' ', '-')
+print(type(t), t)
