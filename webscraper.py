@@ -1,18 +1,12 @@
 import requests
-#from selenium import webdriver
 import unicodedata
-from bs4 import BeautifulSoup
 import pandas as pd
 import time
 import random
 import re
 
-#url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=17989&item_types%5B%5D=bostadsratt'
-#page = requests.get(url)
-#results = BeautifulSoup(page.content, 'html.parser')
+from bs4 import BeautifulSoup
 
-#housing_elems = results.find_all('li', class_ = 'normal-results__hit js-normal-list-item')
-#print(type(housing_elems), len(housing_elems), '\n', housing_elems[0])
 
 # Get list of details page urls, given a search page url
 def get_urls_detail_pages(search_page_url):
@@ -29,14 +23,6 @@ def get_urls_detail_pages(search_page_url):
 	return lst_details_urls
 
 
-#for link in links:
-#	print(type(link), link)
-
-################################
-# Scraping details page
-
-#url = 'https://www.hemnet.se/bostad/lagenhet-2rum-rorsjostaden-malmo-kommun-foreningsgatan-50a-16907356'
-
 # Converts a price string to an integer price
 def price_str_to_int(price_str):
 
@@ -46,6 +32,7 @@ def price_str_to_int(price_str):
 
 	return price
 
+# Get data from a single detail page view
 def get_details(url):
 
 	details = {}
@@ -71,13 +58,6 @@ def get_details(url):
 	price = price_str_to_int(price)
 	details['price'] = price
 
-	# Extracting the info attributes and description
-	#property_type = info_div.find('dd', class_ = 'property-attributes-table__value').text
-	#tenure_type = info_div.find('dd', class_ = 'property-attributes-table__value').text
-
-	#details['property_type'] = property_type
-	#details['tenure_type'] = tenure_type
-
 	dt = info_div.find_all('dt', class_ = 'property-attributes-table__label')
 	dd = info_div.find_all('dd', class_ = 'property-attributes-table__value')
 
@@ -88,7 +68,6 @@ def get_details(url):
 	dd = dd[:-1]
 
 	attributes = {key: value for key, value in zip(dt, dd)}
-	#print('ATTR = ', attributes)
 	details.update(attributes)
 
 	popularity = info_div.find_all('div', class_ = 'property-visits-counter__row-value')
@@ -124,11 +103,6 @@ def get_details_multiple(lst_details_urls, sleep_time = 2):
 	# Adding details for the rest of the properties
 	for i, details_url in enumerate(lst_details_urls[1:]):
 
-		#if i > 10:
-		#	break
-
-		#print(details_url)
-
 		details = get_details(details_url)
 		df = df.append(details, ignore_index = True)
 		time.sleep(random.uniform(0, sleep_time))
@@ -136,9 +110,10 @@ def get_details_multiple(lst_details_urls, sleep_time = 2):
 	return df
 
 
-def sell_price(sell_page_url):
+# Scraping the sold prices from the sold page (containing a list of properties)
+def sold_price(sold_page_url):
 
-	page = requests.get(sell_page_url)
+	page = requests.get(sold_page_url)
 	results = BeautifulSoup(page.content, 'html.parser')
 
 	locations = results.find_all('div', class_ = 'sold-property-listing__location')
@@ -167,9 +142,9 @@ def sell_price(sell_page_url):
 	#print(len(size_lst), size_lst)
 	#print(len(price_lst), price_lst)
 
-	sell_dict = {'location': location_lst, 'size': size_lst, 'price': price_lst}
+	sold_dict = {'location': location_lst, 'size': size_lst, 'price': price_lst}
 
-	df = pd.DataFrame(sell_dict)
+	df = pd.DataFrame(sold_dict)
 	df['size'] = df['size'].apply(lambda x: unicodedata.normalize('NFKD', x))
 	#print(df.info())
 	#print(df.head())
@@ -180,10 +155,40 @@ def sell_price(sell_page_url):
 	return df
 
 
+# Given a url of either search page overview or sold page overview, the number of pages is returned
+def get_num_pages(url):
+
+	# Finding the number of pages with results in the search page view
+	page = requests.get(url)
+	results = BeautifulSoup(page.content, 'html.parser')
+	pagination_div = results.find('div', class_ = 'pagination')
+
+	try:
+
+		pages = pagination_div.find_all('a', class_ = 'button')
+		pages = [page.text for page in pages]
+		if pages[-1] == 'Nästa':
+			pages = pages[:-1]
+		pages = [int(page) for page in pages]
+		pages = max(pages)
+		print('[INFO] Number of pages = ', pages)
+
+	except:
+
+		pages = 1
+		print('[INFO] Only one page with results')
+
+	return pages
+
+
+url = 'https://www.hemnet.se/salda/bostader?item_types%5B%5D=bostadsratt&location_ids%5B%5D=17989&page=1'
+url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=17989'
+p = get_num_pages(url)
+print('Pages = ', p)
+
 if __name__ == '__main__':
 
-	# #url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=474088'
-	# url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=17989'
+	url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=17989&item_types%5B%5D=bostadsratt'
 
 	# # Finding the number of pages with results in the search page view
 	# page = requests.get(url)
@@ -231,13 +236,13 @@ if __name__ == '__main__':
 	# print('Time taken = ', t_tot)
 	# print(df.head())
 
-	path = '/py_scripts/df.pkl' # Path inside the docker container, to which a volume has been mounted
-	# df.to_pickle(path)
+	# path = '/py_scripts/df.pkl' # Path inside the docker container, to which a volume has been mounted
+	# # df.to_pickle(path)
 
 	
-	### Getting sell prices ###
-	sell_page_url = 'https://www.hemnet.se/salda/bostader?location_ids%5B%5D=17989'
-	df_sell = sell_price(sell_page_url)
-	print(df_sell)
-	path_sell = '/'.join(path.split('/')[:-1]) + '/' + 'df_sell.pkl' # Creates a path in the same directory as path with the name df_sell
-	df_sell.to_pickle(path_sell)
+	# ### Getting sold prices ###
+	# sold_page_url = 'https://www.hemnet.se/salda/bostader?location_ids%5B%5D=17989'
+	# df_sold = sold_price(sold_page_url)
+	# print(df_sold)
+	# path_sold = '/'.join(path.split('/')[:-1]) + '/' + 'df_sold.pkl' # Creates a path in the same directory as path with the name df_sold
+	# df_sold.to_pickle(path_sold)

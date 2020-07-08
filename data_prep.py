@@ -35,12 +35,12 @@ print(df.info())
 print(df)
 
 
-# Applying transformations to df_sell
-df_sell = pd.read_pickle('/py_scripts/df_sell.pkl')
-#print(df_sell)
-df_sell['size'] = df_sell['size'].apply(lambda x: float(x.replace(',', '.')))
-#print(df_sell)
+# Applying transformations to df_sold
+df_sold = pd.read_pickle('/py_scripts/df_sold.pkl')
+#print(df_sold)
+df_sold['size'] = df_sold['size'].apply(lambda x: float(x.replace(',', '.')))
+#print(df_sold)
 
 
 df.to_pickle('/py_scripts/df.pkl')
-df_sell.to_pickle('/py_scripts/df_sell.pkl')
+df_sold.to_pickle('/py_scripts/df_sold.pkl')
