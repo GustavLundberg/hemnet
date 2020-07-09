@@ -216,7 +216,9 @@ if __name__ == '__main__':
 	t = t.replace(' ', '-')
 	path = f'/py_scripts/dataframes/df_{t}.pkl' # Path inside the docker container, to which a volume has been mounted
 
+	##################################################
 	### Start - Scraping the active advertisements ###
+	##################################################
 
 	url = 'https://www.hemnet.se/bostader?location_ids%5B%5D=17989&item_types%5B%5D=bostadsratt'
 	pages = get_num_pages(url)
@@ -253,9 +255,15 @@ if __name__ == '__main__':
 	# Serialization
 	df.to_pickle(path)
 
+	################################################
 	### End - Scraping the active advertisements ###
+	################################################
 
+	#################################################
 	### Start - Scraping the sold property prices ###
+	#################################################
+
+	max_num_pages = 3 # Limits the total number of pages we scrape
 
 	url_sold = 'https://www.hemnet.se/salda/bostader?item_types%5B%5D=bostadsratt&location_ids%5B%5D=17989'
 	pages_sold = get_num_pages(url_sold)
@@ -263,6 +271,9 @@ if __name__ == '__main__':
 
 	df_sold = None # Initializing the dataframe used in the following loop
 	for page in range(1, pages_sold+1):
+
+		if page > max_per_page:
+			break
 
 		url_sold_w_page = f'{url_sold}&page={page}'
 
@@ -290,5 +301,7 @@ if __name__ == '__main__':
 	path_sold = '/'.join(path.split('/')[:-1]) + '/' + f'df_sold_{t}.pkl' # Creates a path in the same directory as path with the name df_sold
 	df_sold.to_pickle(path_sold)
 
+	###############################################
 	### End - Scraping the sold property prices ###
+	###############################################
 	
